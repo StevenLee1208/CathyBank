@@ -1,0 +1,139 @@
+*** Settings ***
+Library    AppiumLibrary
+Resource    AndroidDeviceInfo.txt
+
+*** Keywords ***
+Click Element After It Is Visible
+    [Arguments]    ${locator}    ${timeout}
+    Wait Until Element Is Visible    ${locator}    timeout=${timeout}
+    Click Element    ${locator}
+
+Click Element If It Is Visible
+    [Arguments]    ${locator}
+    TRY
+        Click Element After It Is Visible    ${locator}    10
+    EXCEPT
+        Log    PASS
+    END
+
+Input Text After It Is Visible
+    [Arguments]    ${locator}    ${text}    ${timeout}
+    Wait Until Element Is Visible    ${locator}    timeout=${timeout}
+    Input Text    ${locator}    ${text}
+
+Scroll from locatorA to locatorB if keyword is unvisible
+    [Arguments]    ${keyword}    ${locatorA}    ${locatorB}
+    Wait Until Element Is Visible    ${locatorB}    15
+    ${is_visible} =  Run Keyword And Return Status    Page Should Contain Element    ${keyword}
+    Run Keyword If    ${is_visible}==${False}    Scroll    ${locatorA}    ${locatorB}
+
+Scroll Down Until Element Found
+    [Arguments]    ${locator}
+    FOR    ${i}    IN RANGE    30
+        ${is_found}=    Run Keyword And Return Status    Page Should Contain Element    ${locator}
+        Exit For Loop If    '${is_found}' == 'True'
+        Run Keyword If    '${i}' == '29'    Fail    Could not find element
+        Swipe    420    1200    420    300    duration=1000
+    END
+
+Scroll UP Until Element Found
+    [Arguments]    ${locator}
+    FOR    ${i}    IN RANGE    30
+        ${is_found}=    Run Keyword And Return Status    Page Should Contain Element    ${locator}
+        Exit For Loop If    '${is_found}' == 'True'
+        Run Keyword If    '${i}' == '29'    Fail    Could not find element
+        Swipe    875    1500    875    1750    duration=1000
+    END
+
+Element Text Should Not Be Empty
+    [Arguments]    ${locator}
+    ${text} =    Get Text    ${locator}
+    Should Not Be Empty    ${text}    ${locator} text is empty
+
+Element Text Should Not Be
+    [Arguments]    ${locator}    ${unexpectedText}
+    ${text} =    Get Text    ${locator}
+    ${text} =    Convert To String    ${text}
+    IF    "${text}" == "${unexpectedText}"
+        RETURN    ${False}
+    ELSE
+        RETURN    ${True}
+    END
+
+Back To Previous Page
+    Swipe    42    1000    420    1000    duration=1000
+
+Back To Previous Page Until Element Found
+    [Arguments]    ${locator}
+    FOR    ${i}    IN RANGE    30
+        ${is_found}=    Run Keyword And Return Status    Page Should Contain Element    ${locator}
+        Exit For Loop If    '${is_found}' == 'True'
+        Run Keyword If    '${i}' == '29'    Fail    Could not find element
+        Swipe    420    1200    420    300    duration=500
+    END
+
+Element Should be Unvisible
+    [Arguments]    ${locator}
+    Sleep    5
+    ${Element_count}    Get Matching Xpath Count    ${locator}
+    Should Be Equal As Integers    ${Element_count}    0
+
+Wait Until Element Is Visible And Element Text Should Be
+    [Arguments]    ${locator}    ${expected}    ${timeout}
+    Wait Until Element Is Visible    ${locator}    ${timeout}
+    Element Text Should Be    ${locator}    ${expected}
+
+Remove Special Characters
+    # List去除特殊字元
+    [Arguments]    ${input_list}
+    ${cleaned_list} =    Evaluate    [item.strip(' !@#$%^&*(),./?;:{}[]"\''') for item in "${input_list}"]
+    RETURN    ${cleaned_list}
+
+Remove Special Characters From String
+    # String去除特殊字元 除了逗號
+    [Arguments]    ${input_string}
+    ${cleaned_string} =    Evaluate    ''.join(e for e in "${input_string}" if e.isalnum() or e.isspace() or e == ',')
+    RETURN    ${cleaned_string}
+
+Log Variable Type
+    #印出當前變數型態
+    [Arguments]    ${variable}
+    ${type_string}    Evaluate    type(${variable})
+    Log To Console    Variable Type: ${type_string}
+
+Get Text Until It Is Visible
+    [Arguments]    ${variable}
+    Wait Until Element Is Visible    ${variable}    10
+    ${text}    Get Text    ${variable}
+    RETURN    ${text}
+
+Check keyboard status
+    [Arguments]    ${expected_status}
+    ${actual_status} =    Is Keyboard Shown
+    Should Be Equal    ${expected_status}    ${actual_status}    The keyboard shown
+
+Clear Text After Is Visible
+    [Arguments]    ${locator}    ${timeout}
+    Wait Until Element Is Visible    ${locator}    ${timeout}
+    Clear Text    ${locator}
+
+Restart Uto AI App
+    Terminate Application    ${appPackage}
+    Close Application
+    Android Open UtoAi Application
+    FOR    ${counter}    IN RANGE    1    5
+        Sleep   2
+        ${is_found} =    Run Keyword And Return Status    Page Should Contain Element    xpath=//*[@text="國泰世華銀行"]
+        IF    '${is_found}' == 'False'
+            Terminate Application    ${appPackage}
+            Close Application
+            Android Open UtoAi Application
+        ELSE
+            Exit For Loop
+        END
+    END
+
+Complete all tests in the suite
+    Stop Logcat Process
+    Terminate Application    ${appPackage}
+    Close Application
